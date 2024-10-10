@@ -1,0 +1,204 @@
+USE CrowdfundingProjectsDB;
+
+
+/*
+	Tablas fijas 
+*/
+
+CREATE TABLE areaTrabajo (
+    id INT IDENTITY (1,1) PRIMARY KEY
+    ,nombre VARCHAR(64)
+    ,descripcion VARCHAR (256)
+);
+
+CREATE TABLE tipoUser(
+	id INT IDENTITY (1,1) PRIMARY KEY
+	,tipo NVARCHAR(32)
+);
+--^
+--|
+--Dirección.
+--Ventas y mercadeo
+--Producción y operaciones
+--Gestión
+--Finanzas
+--Recursos Humanos
+--Contabilidad y administración
+--NA (no aplica, esto con el fin de que los default tengan FK y no haya problemas entre tablas)
+
+INSERT INTO areaTrabajo(
+	nombre
+	,descripcion	
+)VALUES(
+	'Dirección'
+	,'dirije'
+)
+INSERT INTO areaTrabajo(
+	nombre
+	,descripcion	
+)VALUES(
+	'Ventas y mercadeo'
+	,'vender'
+)
+INSERT INTO areaTrabajo(
+	nombre
+	,descripcion	
+)VALUES(
+	'Producción y operaciones'
+	,'producir'
+)
+INSERT INTO areaTrabajo(
+	nombre
+	,descripcion	
+)VALUES(
+	'Gestión'
+	,'gestionar'
+)
+INSERT INTO areaTrabajo(
+	nombre
+	,descripcion	
+)VALUES(
+	'Finanzas'
+	,'dinero'
+)
+INSERT INTO areaTrabajo(
+	nombre
+	,descripcion	
+)VALUES(
+	'Recursos Humanos'
+	,'si'
+)
+INSERT INTO areaTrabajo(
+	nombre
+	,descripcion	
+)VALUES(
+	'Contabilidad y administración'
+	,'contar'
+)
+INSERT INTO areaTrabajo(
+	nombre
+	,descripcion	
+)VALUES(
+	'NA'
+	,'NA'
+)
+
+
+CREATE TABLE categoriaProyecto(
+	id INT PRIMARY KEY IDENTITY(1,1)
+	,nombre VARCHAR(32) NOT NULL
+	,descripcion VARCHAR(64) 
+);
+
+INSERT INTO categoriaProyecto (
+	tipo
+)VALUES(
+	'default'
+)
+INSERT INTO categoriaProyecto (
+	tipo
+)VALUES(
+	'admin'
+)
+INSERT INTO categoriaProyecto (
+	tipo
+)VALUES(
+	'default'
+)
+INSERT INTO categoriaProyecto (
+	tipo
+)VALUES(
+	'admin'
+)
+
+-------------------------------------------------------------------------------------------------------
+
+
+CREATE TABLE users (
+	id INT IDENTITY(1,1) PRIMARY KEY
+	,nombre NVARCHAR(16) NOT NULL
+	,apellido NVARCHAR(16) NOT NULL
+	,contrasena NVARCHAR(16) NOT NULL
+	,cedula NVARCHAR(32) NOT NULL
+	,correo NVARCHAR(32) NOT NULL
+	,cartera DECIMAL(18,2) NOT NULL
+	,telefono NVARCHAR(16) NOT NULL
+	,idAreaTrabajo INT NOT NULL
+	,idTipoUser INT NOT NULL
+	,isActivo BIT
+	,FOREIGN KEY (idAreaTrabajo) REFERENCES areaTrabajo (id)
+	,FOREIGN KEY (idTipoUser) REFERENCES tipoUser (id)
+);
+
+CREATE TABLE proyecto (
+    id INT PRIMARY KEY IDENTITY (1,1),
+    nombre VARCHAR(64) NOT NULL,
+    descripcion VARCHAR(128) NOT NULL,
+    objetivo VARCHAR(64) NOT NULL,
+    monto DECIMAL(18,2) NOT NULL,
+    max_date DATE NOT NULL,
+    idCategoria INT,
+    idUser INT,
+    FOREIGN KEY (idCategoria) REFERENCES categoriaProyecto(id),
+    FOREIGN KEY (idUser) REFERENCES users(id)
+);
+
+CREATE TABLE media(
+    id INT PRIMARY KEY IDENTITY (1,1),
+    nombreMedia VARCHAR(32), -- perritos_con_sombrero
+    tipoMedia VARCHAR(128),  -- JPEG, JPG, URL en caso de ser video
+    sizeMedia INT,
+    imagen VARBINARY(MAX),   -- Usar VARBINARY(MAX) para almacenar datos binarios como imágenes
+    fechaSubida DATETIME2 DEFAULT GETDATE(),  -- Usar DATETIME2 y establecer el valor por defecto a la fecha y hora actuales
+    idProyecto INT,  -- FK para vincular con el proyecto al que pertenece
+    FOREIGN KEY (idProyecto) REFERENCES proyecto(id)  -- Relación con la tabla proyecto
+);
+
+CREATE TABLE donacion(
+	id INT PRIMARY KEY IDENTITY(1,1)
+	,descripcion VARCHAR(64) 
+	,fecha DATE NOT NULL
+	,monto DECIMAL(18,2) NOT NULL
+	,idUser INT
+	,idProyecto INT
+	,FOREIGN KEY (idUser) REFERENCES users (id)
+	,FOREIGN KEY (idProyecto) REFERENCES proyecto (id)
+);
+
+
+
+-------------------------------------------------------------------------------------------------------
+
+-- Llenado de la tabla areaTrabajo
+INSERT INTO areaTrabajo (nombre, descripcion) VALUES 
+('Dirección', 'Área encargada de la dirección y gestión general de la empresa.'),
+('Ventas y mercadeo', 'Área responsable de las ventas y mercadeo de productos o servicios.'),
+('Producción y operaciones', 'Área dedicada a la producción y operaciones de la empresa.'),
+('Gestión', 'Área enfocada en la gestión interna y externa de la empresa.'),
+('Finanzas', 'Área encargada de la gestión financiera y contable.'),
+('Recursos Humanos', 'Área encargada de la gestión del personal y talento humano.'),
+('Contabilidad y administración', 'Área encargada de la contabilidad y administración de la empresa.'),
+('NA', 'No aplica. Para casos sin área de trabajo específica.');
+
+-- Llenado de la tabla tipoUser
+INSERT INTO tipoUser (tipo) VALUES 
+('standard'),
+('admin');
+
+-- Llenado de la tabla categoriaProyecto con descripciones ajustadas y nuevas categorías
+INSERT INTO categoriaProyecto (nombre, descripcion) VALUES 
+('videogames', 'Proyectos de creación y desarrollo de videojuegos.'),
+('books', 'Proyectos de edición y publicación de libros.'),
+('tabletops', 'Proyectos de juegos de mesa y su producción.'),
+('music', 'Proyectos relacionados con la creación y producción musical.'),
+('art', 'Proyectos enfocados en la creación de obras de arte.');
+
+
+-- Verificar contenido de la tabla areaTrabajo
+SELECT * FROM areaTrabajo;
+
+-- Verificar contenido de la tabla tipoUser
+SELECT * FROM tipoUser;
+
+-- Verificar contenido de la tabla categoriaProyecto
+SELECT * FROM categoriaProyecto;

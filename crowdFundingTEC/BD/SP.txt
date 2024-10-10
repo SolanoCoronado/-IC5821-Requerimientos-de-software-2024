@@ -1,0 +1,1190 @@
+
+--pueden haber proyectos con nombres repetidos, pero no por usuario. Es decir si yo quiero hacer 2 proyectos con el mismo 
+  nombre no debo poder, porque al extraer la info de un unico proyecto no se podria saber con exactitud cual proyecto quiere la info detallada
+--crear todos los SP para agregar datos a las tablas createUsers, createDonation, createMedia, createProyecto
+--crear todos  los SP para obtener la info de las tablas users, donations, media, proyecto, sin mostrar el id por supuesto
+--crear SP validar que cuando se edite correo usuario, el nuevo no exista
+--crear SP para obtener info por cada filtro, ordenados por monto a recaudar de los proyectos (mayor a menor)
+--proyectos ordenados por donaciones mas grandes, de los usuarios ordenados por  el max y min financiador
+--hacer un registro de usuario que sea diferente si es admin, ya que hay que agregarle el area de trabajo
+--es decir 2 SP para registro y 1 ventana interactiva que si es admin agregue el campo de area de trabajo (omitiendo NA) 
+--Obtener ususarios: Tiene que con id de area de trabajo, obtener la info de esa tablas, no mostrar id. Registro e usuario, 
+  se hace con el nombre del area de trabajo, se busca y guarda el id.
+
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE createUsers
+    @inNombre NVARCHAR(32),
+    @inApellido NVARCHAR(32),
+    @inContrasena NVARCHAR(32),
+    @inCedula NVARCHAR(32),
+    @inCorreo NVARCHAR(64),
+    @inCartera DECIMAL(18,2),
+    @inTelefono NVARCHAR(16),
+    @outCode INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @outCode = 0;
+
+    DECLARE @inIdAreaTrabajo INT;
+    DECLARE @inIdTipoUser INT;
+
+    -- Validar Email
+    IF dbo.IsValidEmail(@inCorreo) = 0
+    BEGIN
+        SET @outCode = 50068; -- Código para email no válido
+        RETURN;
+    END
+
+    -- Validar Monto en Cartera
+    IF dbo.IsValidAmount(@inCartera) = 0
+    BEGIN
+        SET @outCode = 50069; -- Código para monto en cartera no válido
+        RETURN;
+    END
+
+    -- Validar Datos No Vacíos
+    IF dbo.IsNotNullUser(@inNombre, @inApellido, @inContrasena, @inCedula, @inCorreo) = 0
+    BEGIN
+        SET @outCode = 50070; -- Código para datos vacíos
+        RETURN;
+    END
+
+    -- Obtener el ID del área de trabajo
+    SELECT @inIdAreaTrabajo = id
+    FROM areaTrabajo
+    WHERE nombre = 'NA';
+
+    -- Obtener el ID del tipo de usuario para usuarios normales
+    SELECT @inIdTipoUser = id
+    FROM tipoUser
+    WHERE tipo = 'standard';
+
+    -- Verificar que el tipo de usuario exista
+    IF @inIdTipoUser IS NULL
+    BEGIN
+        SET @outCode = 50072; -- Código para tipo de usuario no encontrado
+        RETURN;
+    END
+
+    -- Verificar Email Único
+    IF dbo.IsEmailUnique(@inCorreo) = 0
+    BEGIN
+        SET @outCode = 50067; -- Código para email ya en uso
+        RETURN;
+    END
+
+    -- Iniciar Transacción
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        -- Insertar el usuario
+        INSERT INTO users (
+            nombre, apellido, contrasena, cedula, correo, cartera, telefono, idAreaTrabajo, idTipoUser, isActivo
+        ) 
+        VALUES (
+            @inNombre, @inApellido, @inContrasena, @inCedula, @inCorreo, @inCartera, @inTelefono, @inIdAreaTrabajo, @inIdTipoUser, 1
+        );
+
+        -- Confirmar Transacción
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        -- Deshacer Transacción en caso de error
+        ROLLBACK TRANSACTION;
+        SET @outCode = ERROR_NUMBER();
+    END CATCH
+
+    SET NOCOUNT OFF;
+END
+GO
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE createAdmin
+    @inNombre NVARCHAR(32),
+    @inApellido NVARCHAR(32),
+    @inContrasena NVARCHAR(32),
+    @inCedula NVARCHAR(32),
+    @inCorreo NVARCHAR(64),
+    @inCartera DECIMAL(18,2),
+    @inTelefono NVARCHAR(16),
+    @inNameAreaTrabajo NVARCHAR(64),
+    @outCode INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @outCode = 0;
+
+    DECLARE @inIdAreaTrabajo INT;
+    DECLARE @inIdTipoUser INT;
+
+    -- Validar Email
+    IF dbo.IsValidEmail(@inCorreo) = 0
+    BEGIN
+        SET @outCode = 50068; -- Código para email no válido
+        RETURN;
+    END
+
+    -- Validar Monto en Cartera
+    IF dbo.IsValidAmount(@inCartera) = 0
+    BEGIN
+        SET @outCode = 50069; -- Código para monto en cartera no válido
+        RETURN;
+    END
+
+    -- Validar Datos No Vacíos
+    IF dbo.IsNotNullUser(@inNombre, @inApellido, @inContrasena, @inCedula, @inCorreo) = 0
+    BEGIN
+        SET @outCode = 50070; -- Código para datos vacíos
+        RETURN;
+    END
+
+    -- Obtener el ID del área de trabajo
+    SELECT @inIdAreaTrabajo = id
+    FROM areaTrabajo
+    WHERE nombre = @inNameAreaTrabajo;
+
+    -- Verificar que el área de trabajo exista
+    IF @inIdAreaTrabajo IS NULL
+    BEGIN
+        SET @outCode = 50071; -- Código para área de trabajo no encontrada
+        RETURN;
+    END
+
+    -- Obtener el ID del tipo de usuario para administradores
+    SELECT @inIdTipoUser = id
+    FROM tipoUser
+    WHERE tipo = 'admin';
+
+    -- Verificar que el tipo de usuario exista
+    IF @inIdTipoUser IS NULL
+    BEGIN
+        SET @outCode = 50072; -- Código para tipo de usuario no encontrado
+        RETURN;
+    END
+
+    -- Verificar Email Único
+    IF dbo.IsEmailUnique(@inCorreo) = 0
+    BEGIN
+        SET @outCode = 50067; -- Código para email ya en uso
+        RETURN;
+    END
+
+    -- Iniciar Transacción
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        -- Insertar el administrador
+        INSERT INTO users (
+            nombre, apellido, contrasena, cedula, correo, cartera, telefono, idAreaTrabajo, idTipoUser, isActivo
+        ) 
+        VALUES (
+            @inNombre, @inApellido, @inContrasena, @inCedula, @inCorreo, @inCartera, @inTelefono, @inIdAreaTrabajo, @inIdTipoUser, 1
+        );
+
+        -- Confirmar Transacción
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        -- Deshacer Transacción en caso de error
+        ROLLBACK TRANSACTION;
+        SET @outCode = ERROR_NUMBER();
+    END CATCH
+
+    SET NOCOUNT OFF;
+END
+GO
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE loginStandard
+    @inCorreo NVARCHAR(64),
+    @inContrasena NVARCHAR(32),
+    @outCode INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @outCode = 0;
+
+    DECLARE @isActivo BIT;
+    DECLARE @idTipoUser INT;
+
+    -- Verificar si el correo existe, la contraseña coincide, y el usuario es administrador
+    SELECT @isActivo = isActivo, @idTipoUser = idTipoUser
+    FROM users
+    WHERE correo = @inCorreo AND contrasena = @inContrasena;
+
+    -- Validar si el usuario no está activo
+    IF @isActivo = 0
+    BEGIN
+        SET @outCode = 50080; -- Código para usuario inactivo
+        RETURN;
+    END
+    
+    -- Validar si las credenciales son incorrectas
+    IF @isActivo IS NULL
+    BEGIN
+        SET @outCode = 50081; -- Código para credenciales incorrectas
+        RETURN;
+    END
+
+    -- Validar si el usuario no es administrador
+    IF @idTipoUser != 1
+    BEGIN
+        SET @outCode = 50083; -- Código para usuario no standard
+        RETURN;
+    END
+
+    SET NOCOUNT OFF;
+END
+GO
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE loginAdmin
+    @inCorreo NVARCHAR(64),
+    @inContrasena NVARCHAR(32),
+    @outCode INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @outCode = 0;
+
+    DECLARE @isActivo BIT;
+    DECLARE @idTipoUser INT;
+
+    -- Verificar si el correo existe, la contraseña coincide, y el usuario es administrador
+    SELECT @isActivo = isActivo, @idTipoUser = idTipoUser
+    FROM users
+    WHERE correo = @inCorreo AND contrasena = @inContrasena;
+
+    -- Validar si el usuario no está activo
+    IF @isActivo = 0
+    BEGIN
+        SET @outCode = 50080; -- Código para usuario inactivo
+        RETURN;
+    END
+
+    -- Validar si las credenciales son incorrectas
+    IF @isActivo IS NULL
+    BEGIN
+        SET @outCode = 50081; -- Código para credenciales incorrectas
+        RETURN;
+    END
+
+    -- Validar si el usuario no es administrador
+    IF @idTipoUser != 2
+    BEGIN
+        SET @outCode = 50082; -- Código para usuario no administrador
+        RETURN;
+    END
+
+    SET NOCOUNT OFF;
+END
+GO
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE createProyecto
+    @inNombreProyecto NVARCHAR(64),
+    @inDescripcion NVARCHAR(128),
+    @inObjetivo NVARCHAR(64),
+    @inMonto DECIMAL(18,2),
+    @inMaxDate NVARCHAR(32),
+    @inCorreo NVARCHAR(64),
+    @inCategoria NVARCHAR(32),
+    @outCode INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @outCode = 0;
+
+    DECLARE @idUser INT;
+    DECLARE @idCategoria INT;
+    DECLARE @maxDate DATE;
+	DECLARE @idTipoUser INT;
+
+    -- Intentar convertir @inMaxDate a tipo DATE
+    SET @maxDate = TRY_CONVERT(DATE, @inMaxDate, 103); -- Formato 103 es dd/mm/yyyy
+
+    -- Validar si la conversión a fecha fue exitosa
+    IF @maxDate IS NULL
+    BEGIN
+        SET @outCode = 50084; -- Código para fecha inválida en formato NVARCHAR
+        RETURN;
+    END
+
+    -- Validar que el correo existe en la tabla users
+    SELECT @idUser = id, @idTipoUser = idTipoUser
+    FROM users
+    WHERE correo = @inCorreo;
+
+    IF @idUser IS NULL
+    BEGIN
+        SET @outCode = 50075; -- Código para usuario no encontrado
+        RETURN;
+    END
+
+	-- Validar si el usuario no es administrador
+    IF @idTipoUser != 1
+    BEGIN
+        SET @outCode = 50083; -- Código para usuario no standard
+        RETURN;
+    END
+
+    -- Validar que la categoría existe en la tabla categoriaProyecto
+    SELECT @idCategoria = id
+    FROM categoriaProyecto
+    WHERE nombre = @inCategoria;
+
+    IF @idCategoria IS NULL
+    BEGIN
+        SET @outCode = 50076; -- Código para categoría no encontrada
+        RETURN;
+    END
+
+    -- Validar Monto
+    IF dbo.IsValidAmount(@inMonto) = 0
+    BEGIN
+        SET @outCode = 50069; -- Código para monto no válido
+        RETURN;
+    END
+
+    -- Validar que la fecha máxima sea futura
+    IF @maxDate <= GETDATE()
+    BEGIN
+        SET @outCode = 50078; -- Código para fecha máxima inválida
+        RETURN;
+    END
+
+    -- Validar que el usuario no tenga un proyecto con el mismo nombre
+    IF EXISTS (
+        SELECT 1
+        FROM proyecto
+        WHERE nombre = @inNombreProyecto AND idUser = @idUser
+    )
+    BEGIN
+        SET @outCode = 50079; -- Código para nombre de proyecto duplicado por usuario
+        RETURN;
+    END
+
+    -- Iniciar Transacción
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        -- Insertar el proyecto
+        INSERT INTO proyecto (
+            nombre, descripcion, objetivo, monto, max_date, idCategoria, idUser
+        ) 
+        VALUES (
+            @inNombreProyecto, @inDescripcion, @inObjetivo, @inMonto, @maxDate, @idCategoria, @idUser
+        );
+
+        -- Confirmar Transacción
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        -- Deshacer Transacción en caso de error
+        ROLLBACK TRANSACTION;
+        SET @outCode = ERROR_NUMBER(); -- Código de error específico
+    END CATCH
+
+    SET NOCOUNT OFF;
+END
+GO
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE createDonacion
+    @inCorreoUsuario NVARCHAR(64),
+    @inCorreoProyecto NVARCHAR(64),
+    @inNombreProyecto NVARCHAR(64),
+    @inMonto DECIMAL(18,2),
+    @inDescripcion NVARCHAR(64),
+    @outCode INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @outCode = 0;
+
+    DECLARE @idUserDonante INT;
+    DECLARE @idUserProyecto INT;
+    DECLARE @idProyecto INT;
+    DECLARE @cartera DECIMAL(18,2);
+
+    -- Validar que el correo del donante existe en la tabla users
+    SELECT @idUserDonante = id, @cartera = cartera
+    FROM users
+    WHERE correo = @inCorreoUsuario;
+
+    IF @idUserDonante IS NULL
+    BEGIN
+        SET @outCode = 50075; -- Código para usuario donante no encontrado
+        RETURN;
+    END
+
+    -- Verificar que el usuario tenga fondos suficientes
+    IF @cartera < @inMonto
+    BEGIN
+        SET @outCode = 50085; -- Código para monto insuficiente en la cartera del usuario para donación
+        RETURN;
+    END
+
+    -- Validar que el correo del propietario del proyecto existe
+    SELECT @idUserProyecto = id
+    FROM users
+    WHERE correo = @inCorreoProyecto;
+
+    IF @idUserProyecto IS NULL
+    BEGIN
+        SET @outCode = 50075; -- Código para usuario propietario del proyecto no encontrado
+        RETURN;
+    END
+
+    -- Validar que el proyecto existe y pertenece al usuario propietario
+    SELECT @idProyecto = id
+    FROM proyecto
+    WHERE nombre = @inNombreProyecto AND idUser = @idUserProyecto;
+
+    IF @idProyecto IS NULL
+    BEGIN
+        SET @outCode = 50086; -- Código para proyecto no encontrado o no pertenece al usuario
+        RETURN;
+    END
+
+    -- Iniciar Transacción
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        -- Insertar la donación
+        INSERT INTO donacion (
+            descripcion, fecha, monto, idUser, idProyecto
+        ) 
+        VALUES (
+            @inDescripcion, GETDATE(), @inMonto, @idUserDonante, @idProyecto
+        );
+
+        -- Actualizar la cartera del donante
+        UPDATE users
+        SET cartera = cartera - @inMonto
+        WHERE id = @idUserDonante;
+
+        -- Actualizar el monto recaudado del proyecto
+        UPDATE proyecto
+        SET monto = monto + @inMonto
+        WHERE id = @idProyecto;
+
+        -- Confirmar Transacción
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        -- Deshacer Transacción en caso de error
+        ROLLBACK TRANSACTION;
+        SET @outCode = ERROR_NUMBER(); -- Código de error específico
+    END CATCH
+
+    SET NOCOUNT OFF;
+END
+GO
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE deleteUser
+    @inCorreoAdmin NVARCHAR(64),  -- Correo del administrador
+    @inCorreoUser NVARCHAR(64),   -- Correo del usuario a eliminar
+    @outCode INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @outCode = 0;
+
+    DECLARE @adminId INT;
+    DECLARE @userId INT;
+    DECLARE @userType NVARCHAR(32);
+    DECLARE @projectCount INT;
+
+    -- Verificar si el correo pertenece a un administrador
+    SELECT @adminId = users.id, @userType = tipoUser.tipo
+    FROM users
+    INNER JOIN tipoUser ON users.idTipoUser = tipoUser.id
+    WHERE users.correo = @inCorreoAdmin;
+
+    IF @userType != 'admin'
+    BEGIN
+        SET @outCode = 50082; -- Código para usuario no autorizado (no es admin)
+        RETURN;
+    END
+
+    -- Verificar si el usuario a eliminar existe
+    SELECT @userId = users.id
+    FROM users
+    WHERE correo = @inCorreoUser;
+
+    IF @userId IS NULL
+    BEGIN
+        SET @outCode = 50080; -- Código para usuario no encontrado
+        RETURN;
+    END
+
+    -- Verificar si el usuario tiene proyectos asociados
+    SELECT @projectCount = COUNT(*)
+    FROM proyecto
+    WHERE idUser = @userId;
+
+    IF @projectCount > 0
+    BEGIN
+        SET @outCode = 50087; -- Código para usuario con proyectos asociados (no se puede eliminar)
+        RETURN;
+    END
+
+    -- Eliminar usuario si no tiene proyectos asociados
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        DELETE FROM users
+        WHERE id = @userId;
+
+        COMMIT TRANSACTION;
+        SET @outCode = 0; -- Operación exitosa
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        SET @outCode = ERROR_NUMBER(); -- Devolver el código de error
+    END CATCH;
+END;
+GO
+
+
+
+
+--------------------------------------------------------------------------------------------------------
+-- Procedimiento para eliminar un proyecto
+CREATE PROCEDURE deleteProject
+    @inCorreoAdmin NVARCHAR(64),     -- Correo del administrador
+    @inCorreoProyecto NVARCHAR(64),  -- Correo del usuario creador del proyecto
+    @inNombreProyecto NVARCHAR(64),  -- Nombre del proyecto a eliminar
+    @outCode INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @outCode = 0;
+
+    DECLARE @adminId INT;
+    DECLARE @creatorId INT;
+    DECLARE @projectId INT;
+    DECLARE @userType NVARCHAR(32);
+
+    -- Verificar si el correo pertenece a un administrador
+    SELECT @adminId = users.id, @userType = tipoUser.tipo
+    FROM users
+    INNER JOIN tipoUser ON users.idTipoUser = tipoUser.id
+    WHERE users.correo = @inCorreoAdmin;
+
+    IF @userType != 'admin'
+    BEGIN
+        SET @outCode = 50082; -- Código para usuario no autorizado (no es admin)
+        RETURN;
+    END
+
+    -- Verificar si el creador del proyecto existe
+    SELECT @creatorId = users.id
+    FROM users
+    WHERE correo = @inCorreoProyecto;
+
+    IF @creatorId IS NULL
+    BEGIN
+        SET @outCode = 50080; -- Código para usuario creador no encontrado
+        RETURN;
+    END
+
+    -- Verificar si el proyecto con ese nombre y creador existe
+    SELECT @projectId = proyecto.id
+    FROM proyecto
+    WHERE nombre = @inNombreProyecto AND idUser = @creatorId;
+
+    IF @projectId IS NULL
+    BEGIN
+        SET @outCode = 50086; -- Código para proyecto no encontrado
+        RETURN;
+    END
+
+    -- Eliminar dependencias asociadas al proyecto
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        -- Eliminar donaciones relacionadas con el proyecto
+        DELETE FROM donacion
+        WHERE idProyecto = @projectId;
+
+        -- Ahora eliminar el proyecto
+        DELETE FROM proyecto
+        WHERE id = @projectId;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        SET @outCode = ERROR_NUMBER();
+    END CATCH;
+END;
+GO
+
+
+
+
+--------------------------------------------------------------------------------------------------------
+-- SP pra actualizar usuario
+CREATE PROCEDURE updateUser
+    @inCorreoUser NVARCHAR(64),    -- Correo del usuario a actualizar
+    @newNombre NVARCHAR(16) = NULL,
+    @newApellido NVARCHAR(16) = NULL,
+    @newContrasena NVARCHAR(16) = NULL,
+    @newCorreo NVARCHAR(32) = NULL,
+    @newCartera DECIMAL(18, 2) = NULL,
+    @newTelefono NVARCHAR(16) = NULL,
+    @newAreaTrabajo NVARCHAR(32) = NULL,
+    @outCode INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @outCode = 0;
+
+    DECLARE @userId INT;
+    DECLARE @userIsActivo BIT;
+    DECLARE @areaTrabajoId INT;
+
+    -- Obtener el id del usuario a modificar y su estado activo
+    SELECT @userId = id, @userIsActivo = isActivo
+    FROM users
+    WHERE correo = @inCorreoUser;
+
+    IF @userId IS NULL
+    BEGIN
+        SET @outCode = 50088; -- Código para usuario a modificar no encontrado
+        RETURN;
+    END
+
+    -- Verificar que el usuario esté activo
+    IF @userIsActivo IS NULL OR @userIsActivo = 0
+    BEGIN
+        SET @outCode = 50080; -- Código para usuario inactivo
+        RETURN;
+    END
+
+    -- Obtener los ids correspondientes a los nombres proporcionados
+    IF @newAreaTrabajo IS NOT NULL
+    BEGIN
+        SELECT @areaTrabajoId = id
+        FROM areaTrabajo
+        WHERE nombre = @newAreaTrabajo;
+        
+        IF @areaTrabajoId IS NULL
+        BEGIN
+            SET @outCode = 50071; -- Código para área de trabajo no encontrada
+            RETURN;
+        END
+    END
+
+    -- Actualizar solo los campos que no son NULL, excluyendo idTipoUser y isActivo
+    UPDATE users
+    SET nombre = ISNULL(@newNombre, nombre),
+        apellido = ISNULL(@newApellido, apellido),
+        contrasena = ISNULL(@newContrasena, contrasena),
+        correo = ISNULL(@newCorreo, correo),
+        cartera = ISNULL(@newCartera, cartera),
+        telefono = ISNULL(@newTelefono, telefono),
+        idAreaTrabajo = ISNULL(@areaTrabajoId, idAreaTrabajo)
+    WHERE id = @userId;
+
+    SET @outCode = 0; -- Operación exitosa
+END;
+GO
+
+
+
+--------------------------------------------------------------------------------------------------------
+-- SP para actualizar proyecto
+CREATE PROCEDURE updateProject
+    @inNombreProyecto NVARCHAR(64),  
+    @inCorreoCreador NVARCHAR(64),   
+    @newNombre NVARCHAR(64) = NULL,
+    @newDescripcion NVARCHAR(128) = NULL,
+    @newObjetivo NVARCHAR(64) = NULL,
+    @newMonto DECIMAL(18,2) = NULL,
+    @newMaxDate NVARCHAR(10) = NULL,  -- Ahora es NVARCHAR en vez de DATE
+    @newCategoria NVARCHAR(64) = NULL,
+    @outCode INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @outCode = 0;
+
+    DECLARE @creatorId INT;
+    DECLARE @projectId INT;
+    DECLARE @newCategoriaId INT;
+    DECLARE @existingProjectCount INT;
+    DECLARE @convertedMaxDate DATE;
+
+    -- Obtener el id del creador del proyecto
+    SELECT @creatorId = id
+    FROM users
+    WHERE correo = @inCorreoCreador;
+
+    IF @creatorId IS NULL
+    BEGIN
+        SET @outCode = 50088; -- Código para creador no encontrado
+        RETURN;
+    END
+
+    -- Verificar que el proyecto exista y obtener su id
+    SELECT @projectId = id
+    FROM proyecto
+    WHERE nombre = @inNombreProyecto AND idUser = @creatorId;
+
+    IF @projectId IS NULL
+    BEGIN
+        SET @outCode = 50086; -- Código para proyecto no encontrado
+        RETURN;
+    END
+
+    -- Verificar que el nuevo nombre del proyecto no exista para el mismo usuario
+    IF @newNombre IS NOT NULL
+    BEGIN
+        SELECT @existingProjectCount = COUNT(*)
+        FROM proyecto
+        WHERE nombre = @newNombre AND idUser = @creatorId AND id <> @projectId;
+
+        IF @existingProjectCount > 0
+        BEGIN
+            SET @outCode = 50089; -- Código para nombre de proyecto duplicado
+            RETURN;
+        END
+    END
+
+    -- Intentar convertir @newMaxDate a tipo DATE
+    IF @newMaxDate IS NOT NULL
+    BEGIN
+        SET @convertedMaxDate = TRY_CONVERT(DATE, @newMaxDate, 103); -- Formato 103 es dd/mm/yyyy
+
+        -- Validar si la conversión a fecha fue exitosa
+        IF @convertedMaxDate IS NULL
+        BEGIN
+            SET @outCode = 50084; -- Código para fecha inválida en formato NVARCHAR
+            RETURN;
+        END
+    END
+
+    -- Obtener el id de la nueva categoría si se proporciona un nombre de categoría
+    IF @newCategoria IS NOT NULL
+    BEGIN
+        SELECT @newCategoriaId = id
+        FROM categoriaProyecto
+        WHERE nombre = @newCategoria;
+        
+        IF @newCategoriaId IS NULL
+        BEGIN
+            SET @outCode = 50076; -- Código para categoría no encontrada
+            RETURN;
+        END
+    END
+
+    -- Actualizar solo los campos que no son NULL
+    UPDATE proyecto
+    SET nombre = ISNULL(@newNombre, nombre),
+        descripcion = ISNULL(@newDescripcion, descripcion),
+        objetivo = ISNULL(@newObjetivo, objetivo),
+        monto = ISNULL(@newMonto, monto),
+        max_date = ISNULL(@convertedMaxDate, max_date),
+        idCategoria = ISNULL(@newCategoriaId, idCategoria)
+    WHERE id = @projectId;
+
+    SET @outCode = 0; -- Operación exitosa
+END;
+GO
+
+
+
+--------------------------------------------------------------------------------------------------------
+-- Obtiene info del proyecto por donacion
+CREATE PROCEDURE getByDonation
+AS
+BEGIN
+    SELECT 
+        d.descripcion AS descripcionDonacion, 
+        d.fecha, 
+        d.monto, 
+        p.nombre AS nombreProyecto, 
+        p.descripcion AS descripcionProyecto, 
+        p.objetivo AS objetivoProyecto, 
+        p.monto AS montoObjetivo, 
+        p.max_date AS fechaMaxima
+    FROM 
+        donacion AS d
+    JOIN 
+        proyecto AS p ON d.idProyecto = p.id
+    ORDER BY 
+        d.monto DESC;
+END;
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE getUserByMoney
+AS
+BEGIN
+    SELECT nombre, apellido, cartera
+    FROM users
+    ORDER BY cartera DESC;
+END;
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE getByDonator
+AS
+BEGIN
+    SELECT u.nombre, u.apellido, SUM(d.monto) AS totalDonado
+    FROM users u
+    INNER JOIN donacion d ON u.id = d.idUser
+    GROUP BY u.nombre, u.apellido
+    ORDER BY totalDonado DESC;
+END;
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE getProjectsByUser
+AS
+BEGIN
+    SELECT p.nombre, p.descripcion, p.objetivo, p.monto, p.max_date
+    FROM proyecto p
+    INNER JOIN users u ON p.idUser = u.id
+    ORDER BY u.nombre, u.apellido;
+END;
+
+
+
+--------------------------------------------------------------------------------------------------------
+-- Lista de donadores
+CREATE PROCEDURE getByDonator
+AS
+BEGIN
+    SELECT 
+        u.nombre AS nombreDonador, 
+        u.apellido AS apellidoDonador, 
+        p.nombre AS nombreProyecto, 
+        SUM(d.monto) AS totalDonado
+    FROM 
+        users u
+    INNER JOIN 
+        donacion d ON u.id = d.idUser
+    INNER JOIN 
+        proyecto p ON d.idProyecto = p.id
+    GROUP BY 
+        u.nombre, u.apellido, p.nombre
+    ORDER BY 
+        totalDonado DESC;
+END;
+
+
+
+--------------------------------------------------------------------------------------------------------
+-- Muestra todos los proyectos
+CREATE PROCEDURE getAllProjects
+AS
+BEGIN
+    SELECT 
+        p.nombre AS nombreProyecto,
+		dbo.fnGetCategoriaNombre(p.idCategoria) AS nombreCategoria,  -- Obtener el nombre de la categoría
+        p.descripcion, 
+        p.objetivo, 
+        p.monto, 
+        p.max_date, 
+        u.nombre AS nombreCreador, 
+        u.apellido AS apellidoCreador, 
+        u.correo, 
+        u.telefono
+    FROM 
+        proyecto p
+    JOIN 
+        users u ON p.idUser = u.id;
+END;
+GO
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE getProjectsByUser
+AS
+BEGIN
+    SELECT 
+        p.nombre, 
+		dbo.fnGetCategoriaNombre(p.idCategoria) AS nombreCategoria,  -- Obtener el nombre de la categoría
+        p.descripcion, 
+        p.objetivo, 
+        p.monto, 
+        p.max_date
+    FROM proyecto p
+    INNER JOIN users u ON p.idUser = u.id
+    ORDER BY u.nombre, u.apellido;
+END;
+GO
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE getProjectsByUserDonation
+AS
+BEGIN
+    WITH RankedDonations AS (
+        SELECT p.id, p.nombre, p.descripcion, p.objetivo, p.monto, ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY d.monto DESC) AS rn
+        FROM proyecto p
+        INNER JOIN donacion d ON p.id = d.idProyecto
+    )
+    SELECT DISTINCT p.nombre, p.descripcion, p.objetivo, p.monto
+    FROM RankedDonations p
+    WHERE p.rn = 1
+    ORDER BY p.monto DESC;
+END;
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE getProyecto
+    @nombreProyecto VARCHAR(64),
+    @correoUsuario NVARCHAR(32),
+    @outCode INT OUTPUT
+AS
+BEGIN
+    -- Inicializar el parámetro de salida
+    SET @outCode = 0;
+
+    -- Validar que el usuario existe
+    IF NOT EXISTS (SELECT 1 FROM users WHERE correo = @correoUsuario)
+    BEGIN
+        SET @outCode = 50075; -- Correo ingresado no es valido
+        RETURN;
+    END
+    
+    -- Validar que el proyecto existe
+    IF NOT EXISTS (SELECT 1 FROM proyecto p
+                   INNER JOIN users u ON p.idUser = u.id
+                   WHERE p.nombre = @nombreProyecto AND u.correo = @correoUsuario)
+    BEGIN
+        SET @outCode = 50086; -- Proyecto no encontrado o no pertenece al usuario
+        RETURN;
+    END
+
+    -- Obtener el proyecto con el nombre de la categoría
+    SELECT 
+        p.nombre, 
+        dbo.fnGetCategoriaNombre(p.idCategoria) AS nombreCategoria,  -- Nombre de la categoría
+        p.descripcion, 
+        p.objetivo, 
+        p.monto, 
+        p.max_date
+    FROM 
+        proyecto p
+    INNER JOIN 
+        users u ON p.idUser = u.id
+    WHERE 
+        p.nombre = @nombreProyecto AND u.correo = @correoUsuario;
+END;
+GO
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE getUser
+    @correo NVARCHAR(32),
+    @outCode INT OUTPUT
+AS
+BEGIN
+    -- Inicializar el parámetro de salida
+    SET @outCode = 0;
+
+    -- Validar que el correo existe
+    IF NOT EXISTS (SELECT 1 FROM users WHERE correo = @correo)
+    BEGIN
+        SET @outCode = 50075; -- Correo ingresado no es valido
+        RETURN;
+    END
+
+    -- Obtener el usuario
+    SELECT nombre, apellido, cedula, cartera, telefono, isActivo
+    FROM users
+    WHERE correo = @correo;
+END;
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE getDonations
+    @correoUsuario NVARCHAR(32),
+    @outCode INT OUTPUT
+AS
+BEGIN
+    -- Inicializar el parámetro de salida
+    SET @outCode = 0;
+
+    -- Validar que el correo existe
+    IF NOT EXISTS (SELECT 1 FROM users WHERE correo = @correoUsuario)
+    BEGIN
+        SET @outCode = 50075; -- Correo ingresado no es válido
+        RETURN;
+    END
+
+    -- Obtener donaciones junto con el nombre y apellido del donador, el proyecto, y la categoría
+    SELECT 
+        u.nombre AS nombreDonador, 
+        u.apellido AS apellidoDonador, 
+        d.descripcion, 
+        d.fecha, 
+        d.monto, 
+        p.nombre AS proyectoNombre,
+        dbo.fnGetCategoriaNombre(p.idCategoria) AS nombreCategoria  -- Nombre de la categoría
+    FROM 
+        donacion d
+    INNER JOIN 
+        users u ON d.idUser = u.id
+    INNER JOIN 
+        proyecto p ON d.idProyecto = p.id
+    WHERE 
+        u.correo = @correoUsuario;
+END;
+GO
+
+
+
+--------------------------------------------------------------------------------------------------------
+
+CREATE PROCEDURE getProject
+    @correoUsuario NVARCHAR(32),
+    @outCode INT OUTPUT
+AS
+BEGIN
+    -- Inicializar el parámetro de salida
+    SET @outCode = 0;
+
+    -- Validar que el correo existe
+    IF NOT EXISTS (SELECT 1 FROM users WHERE correo = @correoUsuario)
+    BEGIN
+        SET @outCode = 50075; -- Correo ingresado no es valido
+        RETURN;
+    END
+
+    -- Obtener proyectos junto con el nombre de la categoría
+    SELECT 
+        p.nombre AS nombreProyecto, 
+        dbo.fnGetCategoriaNombre(p.idCategoria) AS nombreCategoria,  -- Nombre de la categoría
+        p.descripcion, 
+        p.objetivo, 
+        p.monto, 
+        p.max_date
+    FROM 
+        proyecto p
+    INNER JOIN 
+        users u ON p.idUser = u.id
+    WHERE 
+        u.correo = @correoUsuario;
+END;
+GO
+
+
+
+--------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE getUserDonationProjects
+    @correoUsuario NVARCHAR(32),
+    @outCode INT OUTPUT
+AS
+BEGIN
+    -- Inicializar el parámetro de salida
+    SET @outCode = 0;
+
+    -- Validar que el correo existe
+    IF NOT EXISTS (SELECT 1 FROM users WHERE correo = @correoUsuario)
+    BEGIN
+        SET @outCode = 50075; -- Correo ingresado no es válido
+        RETURN;
+    END
+
+    -- Obtener proyectos donados por el usuario
+    SELECT
+        p.nombre AS ProyectoNombre,
+        p.descripcion AS ProyectoDescripcion,
+        p.objetivo AS ProyectoObjetivo,
+        p.monto AS ProyectoMonto,
+        p.max_date AS ProyectoFechaMaxima,
+        d.descripcion AS DonacionDescripcion,
+        d.fecha AS DonacionFecha,
+        d.monto AS DonacionMonto
+    FROM donacion d
+    INNER JOIN proyecto p ON d.idProyecto = p.id
+    INNER JOIN users u ON d.idUser = u.id
+    WHERE u.correo = @correoUsuario;
+END;
+
+
+
+--------------------------------------------------------------------------------------------------------
+ALTER PROCEDURE [dbo].[obtenerUsuarios]
+AS
+BEGIN
+    SELECT 
+        u.nombre, 
+        u.apellido, 
+        u.contrasena, 
+        u.cedula, 
+        u.correo, 
+        u.cartera, 
+        u.telefono, 
+        a.nombre AS nombreAreaTrabajo, 
+        t.tipo AS nombreTipoUsuario, 
+        CASE 
+            WHEN u.isActivo = 1 THEN 'SI' 
+            ELSE 'NO' 
+        END AS isActivo
+    FROM 
+        users u
+    INNER JOIN 
+        areaTrabajo a ON u.idAreaTrabajo = a.id
+    INNER JOIN 
+        tipoUser t ON u.idTipoUser = t.id;
+END;
+
+
+
+--------------------------------------------------------------------------------------------------------
+-- Anadir fondos al usuario
+CREATE PROCEDURE addFunds
+    @correo NVARCHAR(32),
+    @monto DECIMAL(18,2),
+    @outcode INT OUTPUT
+AS
+BEGIN
+    -- Inicializar @outcode con valor de éxito por defecto
+    SET @outcode = 0;
+
+    -- Verificar si el monto es válido
+    IF @monto <= 0
+    BEGIN
+        SET @outcode = 50069;  -- El monto debe ser mayor que 0
+        RETURN;
+    END
+
+    -- Actualizar la cartera del usuario
+    UPDATE users
+    SET cartera = cartera + @monto
+    WHERE correo = @correo;
+
+    -- Verificar si se actualizó algún registro
+    IF @@ROWCOUNT = 0
+    BEGIN
+        SET @outcode = 50075;  -- Correo ingresado no es válido o no existe en la tabla users
+        RETURN;
+    END
+END;

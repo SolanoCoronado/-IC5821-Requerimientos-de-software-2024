@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Profile</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .header {
+            background-color: #007bff; /* Azul Bootstrap */
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logout-button {
+            color: white;
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .logout-button:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>crowdTEC</h1>
+        <button class="logout-button" onclick="window.location.href = `http://localhost:5000/logout`">Logout</button>
+    </div>
+
+    <div class="container mt-5">
+        <h2>Update Profile</h2>
+        <form id="updateProfileForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" class="form-control" id="username" placeholder="{{ username }}" readonly>
+            </div>
+            <div class="form-group">
+                <label for="newName">New Name</label>
+                <input type="text" class="form-control" id="newName" placeholder="Enter your new name">
+            </div>
+            <div class="form-group">
+                <label for="newLastName">New Last Name</label>
+                <input type="text" class="form-control" id="newLastName" placeholder="Enter your new last name">
+            </div>
+            <div class="form-group">
+                <label for="newWallet">New Wallet</label>
+                <input type="text" class="form-control" id="newWallet" placeholder="Enter your new wallet">
+            </div>
+            <div class="form-group">
+                <label for="newPhone">New Phone</label>
+                <input type="text" class="form-control" id="newPhone" placeholder="Enter your new phone number">
+            </div>
+            <div class="form-group">
+                <label for="newEmail">New Email</label>
+                <input type="email" class="form-control" id="newEmail" placeholder="Enter your new email">
+            </div>
+            <div class="form-group">
+                <label for="newPassword">New Password</label>
+                <input type="password" class="form-control" id="newPassword" placeholder="Enter your new password">
+            </div>
+            <!-- Select box for Area de Trabajo -->
+            <select id="nameAreaTrabajo" class="form-control" required>
+                <option value="">Seleccione su Área de Trabajo</option>
+                <option value="Dirección">Dirección</option>
+                <option value="Ventas y mercadeo">Ventas y mercadeo</option>
+                <option value="Producción y operaciones">Producción y operaciones</option>
+                <option value="Gestión">Gestión</option>
+                <option value="Finanzas">Finanzas</option>
+                <option value="Recursos Humanos">Recursos Humanos</option>
+                <option value="Contabilidad y administración">Contabilidad y administración</option>
+                <option value="NA">NA</option>
+            </select>
+            <button type="button" class="btn btn-primary" onclick="updateProfile()">Update Profile</button>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+
+        
+        async function updateProfile() {
+
+
+        
+        document.addEventListener("keydown", function (event) {
+           
+            if (event.key === "Backspace" && !["INPUT", "TEXTAREA"].includes(event.target.tagName)) {
+                event.preventDefault(); 
+            }
+        });
+
+       
+        window.addEventListener("popstate", function (event) {
+            history.pushState(null, null, window.location.href); 
+        });
+
+        // Empujar una nueva entrada en el historial para bloquear retroceso
+        window.onload = function () {
+            history.pushState(null, null, window.location.href);
+        };
+            // Capturar los valores del formulario
+            const newName = document.getElementById('newName').value.trim();
+            const newApellido = document.getElementById('newLastName').value.trim();
+            const newCartera = parseFloat(document.getElementById('newWallet').value.trim());
+            const newPhone = document.getElementById('newPhone').value.trim();
+            const newEmail = document.getElementById('newEmail').value.trim();
+            const newPassword = document.getElementById('newPassword').value.trim();
+            const newField = document.getElementById('nameAreaTrabajo').value.trim();
+
+            // Expresiones regulares para validación
+            const emailRegex = /^[^\s@]+@estudiantec\.cr$/;
+            const phoneRegex = /^\d+$/;
+
+            // Validaciones
+            if (!newName) {
+                alert('El nombre no puede estar vacío.');
+                return;
+            }
+
+            if (!newApellido) {
+                alert('El apellido no puede estar vacío.');
+                return;
+            }
+
+            if (isNaN(newCartera) || newCartera <= 0) {
+                alert('La cartera debe ser un número mayor a 0.');
+                return;
+            }
+
+            if (!phoneRegex.test(newPhone)) {
+                alert('El teléfono debe contener solo números.');
+                return;
+            }
+
+            if (!emailRegex.test(newEmail)) {
+                alert('El correo debe tener el formato @estudiantec.cr.');
+                return;
+            }
+
+            if (!newPassword) {
+                alert('La contraseña no puede estar vacía.');
+                return;
+            }
+
+            const formData = {
+                username: "{{ username }}",
+                newName: newName,
+                newApellido: newApellido,
+                newCartera: newCartera,
+                newPhone: newPhone,
+                newEmail: newEmail,
+                newPassword: newPassword,
+                newField: newField
+            };
+
+            try {
+                const response = await fetch('http://localhost:5000/api/users/update', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message);
+                    window.location.href = `http://localhost:5000/AdminPanel?email={{ username }}`
+                } else {
+                    alert(result.message + ': ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while updating the profile.');
+            }
+        }
+
+        function logout() {
+            // Implement logout functionality here
+            alert('Logging out...');
+            // You might want to redirect to a login page or clear authentication cookies
+        }
+    </script>
+</body>
+</html>

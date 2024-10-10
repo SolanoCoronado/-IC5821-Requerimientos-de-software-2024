@@ -1,0 +1,23 @@
+workstation id=CrowdfundingProjectsDB.mssql.somee.com;
+
+packet size=4096;
+
+user id=AlonsoDM_SQLLogin_1;
+
+pwd=lv7pherkw6;
+
+data source=CrowdfundingProjectsDB.mssql.somee.com;
+
+persist security info=False;
+
+initial catalog=CrowdfundingProjectsDB;
+
+TrustServerCertificate=True
+
+
+
+
+
+
+
+

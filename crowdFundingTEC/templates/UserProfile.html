@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Profile</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .header {
+            background-color: #007bff; /* Azul Bootstrap */
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logout-button {
+            color: white;
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .logout-button:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>crowdTEC</h1>
+        <button onclick="window.location.href = `http://localhost:5000/logout`" class="logout-button" >Logout</button>
+    </div>
+
+    <div class="container mt-5">
+        <h2>Update Profile</h2>
+        <form id="updateProfileForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" class="form-control" id="username"  placeholder="{{ username }}" readonly>
+            </div>
+            <div class="form-group">
+                <label for="newName">New Name</label>
+                <input type="text" class="form-control" id="newName"  placeholder="Enter your new name">
+            </div>
+            <div class="form-group">
+                <label for="newLastName">New Last Name</label>
+                <input type="text" class="form-control" id="newLastName" placeholder="Enter your new last name">
+            </div>
+            <div class="form-group">
+                <label for="newWallet">New Wallet</label>
+                <input type="text" class="form-control" id="newWallet"  placeholder="Enter your new wallet">
+            </div>
+            <div class="form-group">
+                <label for="newPhone">New Phone</label>
+                <input type="text" class="form-control" id="newPhone" placeholder="Enter your new phone number">
+            </div>
+            <div class="form-group">
+                <label for="newEmail">New Email</label>
+                <input type="email" class="form-control" id="newEmail" placeholder="Enter your new email">
+            </div>
+            <div class="form-group">
+                <label for="newPassword">New Password</label>
+                <input type="password" class="form-control" id="newPassword" placeholder="Enter your new password">
+            </div>
+            <button type="button" class="btn btn-primary" onclick="updateProfile()">Update Profile</button>
+        </form>
+    </div>
+    
+    <div class="form-group mt-4">
+        <label for="amountToAdd">Amount to Add</label>
+        <input type="text" class="form-control" id="amountToAdd" placeholder="Enter amount to add">
+    </div>
+    <div class="form-group text-center mt-3">
+        <button type="button" class="btn btn-primary" onclick="addMoney()">Add Money</button>
+    </div>
+    
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        // Función para agregar dinero
+        async function addMoney() {
+            const amountToAdd = parseFloat(document.getElementById('amountToAdd').value.trim());
+            const username = "{{ username }}"
+
+            if (isNaN(amountToAdd) || amountToAdd <= 1) {
+                alert('Amount to add must be a number greater than 0.');
+                return;
+                }
+
+    
+            const data = {
+                username: username,
+                newCartera: amountToAdd
+            };
+    
+            try {
+                const response = await fetch('http://localhost:5000/api/users/addMoney', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+    
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message);
+                    // Opcional: Puedes actualizar el UI o redirigir según sea necesario
+                } else {
+                    alert(result.message + ': ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while adding money.');
+            }
+        }
+    
+        // Función para actualizar el perfil
+        async function updateProfile() {
+            const newName = document.getElementById('newName').value.trim();
+            const newLastName = document.getElementById('newLastName').value.trim();
+            const newWallet = document.getElementById('newWallet').value.trim();
+            const newPhone = document.getElementById('newPhone').value.trim();
+            const newEmail = document.getElementById('newEmail').value.trim();
+            const newPassword = document.getElementById('newPassword').value.trim();
+            const correoRegex = /^[^\s@]+@estudiantec\.cr$/; // Verifica que el correo contenga @estudiante.ccr
+
+        if (!correoRegex.test(newEmail)) {
+            alert('El correo debe tener el formato @estudiantec.cr');
+            return;
+        }
+                    // Validaciones
+        if (!newName) {
+            alert('New name cannot be empty.');
+            return;
+        }
+
+        if (!newLastName) {
+            alert('New last name cannot be empty.');
+            return;
+        }
+
+        if (!newWallet || isNaN(newWallet) || parseFloat(newWallet) <= 0) {
+            alert('New wallet must be a number greater than 0.');
+            return;
+        }
+
+        if (!newPhone || isNaN(newPhone)) {
+            alert('New phone must be a valid number.');
+            return;
+        }
+
+        if (!newPassword) {
+            alert('New password cannot be empty.');
+            return;
+        }
+            const formData = {
+                username: "{{ username }}" ,
+                newName: document.getElementById('newName').value,
+                newApellido: document.getElementById('newLastName').value,
+                newCartera: document.getElementById('newWallet').value,
+                newPhone: document.getElementById('newPhone').value,
+                newEmail: document.getElementById('newEmail').value,
+                newPassword: document.getElementById('newPassword').value
+            };
+    
+            try {
+                const response = await fetch('http://localhost:5000/api/users/update', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+    
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message);
+                    window.location.href = `http://localhost:5000/start?email={{ username }}`;
+                } else {
+                    alert(result.message + ': ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while updating the profile.');
+            }
+        }
+    
+        function logout() {
+            // Implement logout functionality here
+            alert('Logging out...');
+            // You might want to redirect to a login page or clear authentication cookies
+        }
+    </script>
+    
+    
+</body>
+</html>

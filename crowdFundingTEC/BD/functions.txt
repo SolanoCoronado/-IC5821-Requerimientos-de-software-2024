@@ -1,0 +1,100 @@
+
+USE CrowdfundingProjectsDB
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE FUNCTION dbo.IsEmailUnique
+(
+    @inEmail NVARCHAR(255)
+)
+RETURNS BIT
+AS
+BEGIN
+    -- Declarar la variable de retorno
+    DECLARE @Result BIT;
+
+    -- Manejar el caso en que @inEmail es nulo o vacío
+    IF @inEmail IS NULL OR LTRIM(RTRIM(@inEmail)) = ''
+    BEGIN
+        -- Si el email es nulo o vacío, considerarlo como no único
+        SET @Result = 0;
+    END
+    ELSE
+    BEGIN
+        -- Verificar si el email ya existe en la tabla 'users'
+        IF NOT EXISTS (SELECT 1 FROM users WHERE correo = @inEmail)
+        BEGIN
+            -- Si no existe el email, es único
+            SET @Result = 1;
+        END
+        ELSE
+        BEGIN
+            -- Si existe el email, no es único
+            SET @Result = 0;
+        END
+    END
+
+    -- Retornar el resultado de la función
+    RETURN @Result;
+END
+GO
+
+---------------------------------------------------------------------------------------------
+
+CREATE FUNCTION IsValidEmail(@Email VARCHAR(255))
+RETURNS BIT
+AS
+BEGIN
+    IF @Email LIKE '%@estudiantec.cr' AND PATINDEX('%_@__%.__%', @Email) > 0
+        RETURN 1;
+    RETURN 0;
+END;
+
+---------------------------------------------------------------------------------------------
+
+CREATE FUNCTION dbo.IsValidAmount(@Amount DECIMAL(18, 2))
+RETURNS BIT
+AS
+BEGIN
+    IF @Amount >= 0
+        RETURN 1;
+
+    RETURN 0;
+END
+
+---------------------------------------------------------------------------------------------
+
+CREATE FUNCTION IsNotNullUser(@inName NVARCHAR(32)
+	,@inApellido NVARCHAR(32)
+	,@inPassword NVARCHAR(32)
+	,@inCedula NVARCHAR (32)
+	,@inEmail NVARCHAR(64))
+RETURNS BIT
+AS
+BEGIN
+    IF @inName IS NOT NULL AND LEN(@inName) > 0 AND @inApellido IS NOT NULL AND LEN(@inApellido)>0 AND
+	   @inPassword IS NOT NULL AND LEN(@inPassword)>0 AND @inCedula IS NOT NULL AND LEN(@inCedula)>0 AND
+	   @inEmail IS NOT NULL AND LEN(@inEmail)>0
+        RETURN 1;
+    RETURN 0;
+END;
+
+
+
+---------------------------------------------------------------------------------------------
+CREATE FUNCTION dbo.fnGetCategoriaNombre(@idCategoria INT)
+RETURNS NVARCHAR(32)
+AS
+BEGIN
+    DECLARE @categoriaNombre NVARCHAR(32);
+    
+    SELECT @categoriaNombre = nombre 
+    FROM categoriaProyecto 
+    WHERE id = @idCategoria;
+
+    RETURN @categoriaNombre;
+END;
+GO

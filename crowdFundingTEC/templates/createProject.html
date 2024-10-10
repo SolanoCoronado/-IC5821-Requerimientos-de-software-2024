@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrowdTEC</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    .navbar-custom {
+      background-color: #f8f9fa; /* Fondo claro para la barra de navegación */
+      border-bottom: 1px solid #ccc; /* Línea inferior para separar la barra de navegación */
+    }
+    .navbar-brand {
+      font-weight: bold;
+      color: #000; /* Color del texto de la marca */
+    }
+    .navbar .nav-link {
+      color: #000; /* Color del texto de los enlaces de navegación */
+    }
+    .btn-custom {
+      background-color: #4a36fc; /* Color azul para los botones principales */
+      color: white;
+      border-radius: 20px;
+      padding: 10px 20px;
+      font-size: 1rem;
+    }
+    .btn-custom:hover {
+      background-color: #2e3b55; /* Azul oscuro al pasar el ratón */
+    }
+    .footer {
+      background-color: #2e3b55; /* Fondo azul oscuro para el pie de página */
+      height: 50px;
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body class="d-flex flex-column" style="min-height: 100vh;">
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light navbar-custom">
+    <a class="navbar-brand" href="#">CrowdTEC</a>
+    <div class="ml-auto d-flex">
+      <a href="#" class="nav-link">Contact</a>
+      <a href="#" onclick="window.location.href = `http://localhost:5000/loginF`" class="nav-link">Log Out</a>
+      <a class="nav-link" href="#"><i class="fas fa-user"></i></a>
+    </div>
+  </nav>
+
+  <div class="container mt-5">
+    <div class="row">
+      <!-- Form Section -->
+      <div class="col-md-6">
+        <div class="form-group">
+          <label for="projectName">Project Name</label>
+          <input type="text" class="form-control" id="projectName" placeholder="Enter project name">
+        </div>
+        <div class="form-group">
+          <label for="projectDescription">Project Description</label>
+          <input type="text" class="form-control" id="projectDescription" placeholder="Enter project description">
+        </div>
+        <div class="form-group">
+          <label for="fundingGoal">Goal</label>
+          <input type="text" class="form-control" id="fundingGoal" placeholder="Enter funding goal">
+        </div>
+        <div class="form-group">
+          <label for="Amount">Amount</label>
+          <input type="text" class="form-control" id="Amount" placeholder="Enter funding goal">
+        </div>
+        <select id="projectCategory" class="form-control" required>
+          <option value="">Seleccione su Categoria</option>
+          <option value="videogames">videogames</option>
+          <option value="books">books</option>
+          <option value="tabletops">tabletops</option>
+          <option value="music">music</option>
+          <option value="art">art</option>
+      </select>
+        <div class="form-group">
+          <label for="deadline">Deadline (DD/MM/YYYY)</label>
+          <input type="text" class="form-control" id="deadline" placeholder="Enter deadline">
+        </div>
+
+        <div class="form-group text-center">
+          <button class="btn btn-custom" id="createProjectBtn">Create Project</button>
+        </div>
+        <div id="message"></div>
+      </div>
+      <!-- Image Section -->
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer"></div>
+
+  <!-- Bootstrap JS and dependencies -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+  <script>
+
+
+    document.getElementById('createProjectBtn').addEventListener('click', function() {
+      // Capturar los valores del formulario
+      const projectName = document.getElementById('projectName').value;
+      const projectDescription = document.getElementById('projectDescription').value;
+      const fundingGoal = parseFloat(document.getElementById('fundingGoal').value);
+      const projectCategory = document.getElementById('projectCategory').value;
+      const projectAmount = parseFloat(document.getElementById('Amount').value);
+      const deadline = document.getElementById('deadline').value;
+      const userEmail = "{{username}}";
+
+
+
+
+      if (!projectName) {
+      alert('Project name cannot be empty.');
+      return;
+    }
+
+    if (!projectDescription) {
+      alert('Project description cannot be empty.');
+      return;
+    }
+
+    if (isNaN(fundingGoal) || fundingGoal <= 1) {
+      alert('Funding goal must be a number greater than 1.');
+      return;
+    }
+
+    if (isNaN(projectAmount) || projectAmount <= 1) {
+      alert('Amount raised must be a number greater than 1.');
+      return;
+    }
+
+      // Crear el cuerpo del request en formato JSON
+      const data = {
+        nombre: projectName,
+        descripcion: projectDescription,
+        objetivo: fundingGoal,
+        monto: projectAmount,
+        max_date: deadline, 
+        nameCategoria: projectCategory,
+        userEmail: userEmail
+      };
+      console.log(data)
+      // Realizar la petición POST a la API
+      fetch('http://127.0.0.1:5000/api/project', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data); // Para depuración
+        const messageDiv = document.getElementById('message');
+
+        if (data.message === "Proyecto creado") {
+          alert('Project created successfully!');
+        } else {
+          alert('Project creation failed!');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while creating the project');
+      });
+    });
+  </script>
+</body>
+</html>

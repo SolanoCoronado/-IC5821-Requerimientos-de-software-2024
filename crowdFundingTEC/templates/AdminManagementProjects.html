@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrowdTEC</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #ffffff;
+            color: rgb(0, 0, 0);
+        }
+        .navbar {
+            background-color: #2E3B55;
+        }
+        .table {
+            color: rgb(0, 0, 0);
+        }
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">CrowdTEC</a>
+            <div class="d-flex">
+                <a class="nav-link text-white me-3" href="#">Contact</a>
+                <a onclick="window.location.href = `http://localhost:5000/logout`" class="nav-link text-white me-3" href="#">Log out</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h2 class="text-center mb-4">Project List</h2>
+        <div class="table-container">
+            <table class="table table-borderless">
+                <thead>
+                    <tr>
+                        <th>Project Name</th>
+                        <th>Description</th>
+                        <th>Goal</th>
+                        <th>Amount Raised</th>
+                        <th>Deadline</th>
+                        <th>Category</th>
+                        <th>User Email</th>
+                        <th>Total donated</th>
+                        <th>Actions</th>
+                        
+                    </tr>
+                </thead>
+                <tbody id="projectTableBody">
+                    <!-- Projects will be dynamically added here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="container mt-5">
+     
+        <div class="d-flex justify-content-around">
+            
+            <button class="btn btn-outline-primary" onclick="fetchData('http://127.0.0.1:5000/api/projects')">All Projects</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Function to add a project to the table
+        function addProject(project) {
+            const tableBody = document.getElementById('projectTableBody');
+            const row = tableBody.insertRow();
+            
+            // Insert project data according to the structure provided
+            row.innerHTML = `
+                <td>${project.nombre || 'No name'}</td>
+                <td>${project.descripcion || 'No description'}</td>
+                <td>${project.objetivo || 'No goal'}</td>
+                <td>${project.monto || 'No amount'}</td>
+                <td>${project.max_date || '-'}</td>
+                <td>${project.categoria || '-'}</td>
+                <td>${project.correo || '-'}</td>
+                <td>${project.TotalDonado || '-'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-light" onclick="redirectToUpdate('${project.nombre}', '${project.correo}')">See details</button>
+                </td>
+            `;
+        }
+
+
+
+
+        // Function to clear the table
+        function clearTable() {
+            const tableBody = document.getElementById('projectTableBody');
+            tableBody.innerHTML = '';
+        }
+
+        // Function to fetch projects from the API
+        async function loadProjects(url) {
+            console.log("{{ username }}")
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Error al obtener los proyectos');
+                }
+                const projects = await response.json();
+                clearTable(); // Clear the table before adding new data
+                console.log(projects)
+                projects.forEach(addProject);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function redirectToUpdate(projectName, userEmail) {
+        const encodedProjectName = encodeURIComponent(projectName);
+        const encodedProjectMail = encodeURIComponent(userEmail);
+        const username = "{{ username }}";
+        window.location.href = "http://localhost:5000/seeDetailsAdmin?username="+username + "&usernameProject=" + encodeURIComponent(encodedProjectMail) + "&nameProject=" + encodeURIComponent(encodedProjectName);
+
+
+
+
+    }
+        // Function to handle fetch requests for different endpoints
+        async function fetchData(url) {
+            await loadProjects(url);
+        }
+    </script>
+</body>
+</html>

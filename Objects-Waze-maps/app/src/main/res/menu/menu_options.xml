@@ -1,0 +1,75 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_identifier"
+        android:title="Identifier" />
+
+    <item
+        android:id="@+id/action_maps"
+        android:title="Maps">
+        <menu>
+            <!-- Submenú para Coca Cola -->
+            <item
+                android:id="@+id/coca_cola"
+                android:title="Coca Cola">
+                <menu>
+                    <item
+                        android:id="@+id/asetec_coca"
+                        android:title="ASETEC" />
+                    <item
+                        android:id="@+id/musi_coca"
+                        android:title="Musi" />
+                    <item
+                        android:id="@+id/fresh_market_coca"
+                        android:title="Fresh Market" />
+                </menu>
+            </item>
+
+            <!-- Submenú para Tropical -->
+            <item
+                android:id="@+id/tropical"
+                android:title="Tropical">
+                <menu>
+                    <item
+                        android:id="@+id/asetec_tropical"
+                        android:title="ASETEC" />
+                    <item
+                        android:id="@+id/musi_tropical"
+                        android:title="Musi" />
+                    <item
+                        android:id="@+id/fresh_market_tropical"
+                        android:title="Fresh Market" />
+                </menu>
+            </item>
+
+            <!-- Submenú para Agua -->
+            <item
+                android:id="@+id/agua"
+                android:title="Agua">
+                <menu>
+                    <item
+                        android:id="@+id/soda_comedor_agua"
+                        android:title="Soda Comedor" />
+                    <item
+                        android:id="@+id/soda_lago_agua"
+                        android:title="Soda Lago" />
+                    <item
+                        android:id="@+id/soda_forestal_agua"
+                        android:title="Soda Forestal" />
+                    <item
+                        android:id="@+id/asetec_agua"
+                        android:title="ASETEC" />
+                    <item
+                        android:id="@+id/musi_agua"
+                        android:title="Musi" />
+                    <item
+                        android:id="@+id/fresh_market_agua"
+                        android:title="Fresh Market" />
+                </menu>
+            </item>
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/action_waze"
+        android:title="Waze" />
+</menu>

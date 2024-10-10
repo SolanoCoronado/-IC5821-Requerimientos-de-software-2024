@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrowdTEC</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    .navbar-custom {
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #ccc;
+    }
+    .navbar-brand {
+      font-weight: bold;
+      color: #000;
+    }
+    .navbar .nav-link {
+      color: #000;
+    }
+    .btn-custom {
+      background-color: #4a36fc;
+      color: white;
+      border-radius: 20px;
+      padding: 10px 20px;
+      font-size: 1rem;
+    }
+    .btn-custom:hover {
+      background-color: #2e3b55;
+    }
+    .footer {
+      background-color: #2e3b55;
+      height: 50px;
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body class="d-flex flex-column" style="min-height: 100vh;">
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light navbar-custom">
+    <a class="navbar-brand" href="#">CrowdTEC</a>
+    <div class="ml-auto d-flex">
+      <a href="#" class="nav-link">Contact</a>
+      <a href="#" onclick="window.location.href = `http://localhost:5000/logout`" class="nav-link">Log Out</a>
+      <a class="nav-link" href="#"><i class="fas fa-user"></i></a>
+    </div>
+  </nav>
+
+  <form id="imageForm">
+    <input type="file" id="imageInput" name="image" accept="image/*" required />
+    <button type="submit">Subir Imagen</button>
+  </form>
+  <button id="fetchImages">Extraer Imágenes</button>
+ 
+
+  <div class="container mt-5">
+    <div class="row">
+      <!-- Form Section -->
+      <div class="col-md-6">
+        <div class="form-group">
+          <label for="oldName">Old Name</label>
+          <input type="text" class="form-control" id="oldName" placeholder="Old project name" readonly>
+        </div>
+        <div class="form-group">
+          <label for="projectName">Project Name</label>
+          <input type="text" class="form-control" id="projectName" placeholder="Enter project name">
+        </div>
+        <div class="form-group">
+          <label for="projectDescription">Project Description</label>
+          <input type="text" class="form-control" id="projectDescription" placeholder="Enter project description">
+        </div>
+        <div class="form-group">
+          <label for="fundingGoal">Funding Goal</label>
+          <input type="text" class="form-control" id="fundingGoal" placeholder="Enter funding goal">
+        </div>
+        <div class="form-group">
+          <label for="amountRaised">Amount Raised</label>
+          <input type="text" class="form-control" id="amountRaised" placeholder="Enter amount raised">
+        </div>
+        <div class="form-group">
+          <label for="projectCategory">Project Category</label>
+          <input type="text" class="form-control" id="projectCategory" placeholder="Enter project category">
+        </div>
+        <div class="form-group">
+          <label for="deadline">Deadline (DD/MM/YYYY)</label>
+          <input type="text" class="form-control" id="deadline" placeholder="Enter deadline">
+        </div>
+        <div class="form-group">
+          <label for="userEmail">Your Email</label>
+          <input type="email" class="form-control" id="userEmail" placeholder="Enter your email" readonly>
+        </div>
+        <div class="form-group text-center">
+          <button class="btn btn-custom" id="updateProjectBtn">Update Project </button>
+        </div>
+        <div id="message"></div>
+      </div>
+    </div>
+  </div>
+  <button id="fetchVideos" onclick="fetchVideos('{{ username }}', '{{ projectName }}')">Extraer URL'S videos</button>
+
+  <button id="createVideos">Agregar video</button>
+  <div id="videoContiner">
+    <input type="text" id="videoBox" placeholder="">
+  </div>
+  <div id="videoContainerURL"></div>
+  <!-- Footer -->
+  <div class="footer"></div>
+
+  <!-- Bootstrap JS and dependencies -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+  <script>
+    // Function to get query parameters from the URL
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    // Load project data from query parameters
+    function loadProjectData() {
+      // Obtener parámetros de la URL
+
+      
+      // Asignar valores a los campos de entrada
+      document.getElementById('oldName').value = "{{ projectName }}" || '';
+      document.getElementById('userEmail').value = "{{ username }}" || '';
+
+      
+    }
+
+
+
+    async function fetchVideos(username, projectName) {
+    const videoUrlsContainer = document.getElementById('videoContainerURL');
+    videoUrlsContainer.innerHTML = '';  // Limpiar el contenido antes de actualizarlo
+
+    try {
+        const response = await fetch(`http://localhost:5000/api/video/${username}/${projectName}`);
+        const data = await response.json();
+
+        if (response.ok) {
+            // Suponiendo que `data` es un array de objetos que contiene una propiedad `url`
+            data.forEach(video => {
+              console.log(video)
+                const videoElement = document.createElement('p');
+                videoElement.textContent = video.videoURL
+                // Cambia `url` a la propiedad correcta que tenga tu objeto
+                videoUrlsContainer.appendChild(videoElement);
+            });
+        } else {
+            videoUrlsContainer.innerHTML = 'Error al obtener los videos.';
+        }
+    } catch (error) {
+        videoUrlsContainer.innerHTML = 'Error de red al obtener los videos.';
+        console.error('Error:', error);
+    }
+}
+
+    // Function to handle project update
+    async function updateProject() {
+  const projectData = {
+    oldProyectName: "{{ projectName }}",
+    newName: document.getElementById('projectName').value,
+    newDescripcion: document.getElementById('projectDescription').value,
+    newObjetivo: document.getElementById('fundingGoal').value,
+    newMonto: parseFloat(document.getElementById('amountRaised').value),
+    newMaxDate: document.getElementById('deadline').value,
+    newCategoria: document.getElementById('projectCategory').value,
+    userEmail: "{{ username }}"
+  };
+
+  try {
+    const response = await fetch('http://127.0.0.1:5000/api/project/update', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(projectData)
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al actualizar el proyecto');
+    }
+
+    const result = await response.json();
+    document.getElementById('message').textContent = 'Project updated successfully!';
+  } catch (error) {
+    console.error('Error:', error);
+    document.getElementById('message').textContent = 'Failed to update project.';
+  }
+}
+
+    // Load project data when the page is ready
+    document.addEventListener('DOMContentLoaded', loadProjectData);
+
+    // Attach update function to the button click event
+    document.getElementById('updateProjectBtn').addEventListener('click', updateProject);
+  </script>
+  <script>
+    const form = document.getElementById('imageForm');
+    const fetchImagesButton = document.getElementById('fetchImages');
+    const imagesContainer = document.getElementById('imagesContainer');
+    const fetchVideoCreateButton= document.getElementById('createVideos');
+    const fetchVideoGetButton= document.getElementById('fetchVideos');
+    const projectName="{{ projectName }}" ;
+    const sesion = "{{ username }}" ;
+    
+    // Subir imagen
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const imageInput = document.getElementById('imageInput');
+        const formData = new FormData();
+        formData.append('image', imageInput.files[0]);
+        try {
+            const response = await fetch(`http://127.0.0.1:5000/api/upload/${sesion}/${encodeURIComponent(projectName)}`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            alert(data.message);
+        } catch (error) {
+            console.error('Error al subir la imagen:', error);
+        }
+    });
+    
+    fetchVideoCreateButton.addEventListener('click', async () => {
+      const videoData = {
+        emailUser: "{{ username }}" ,
+        nameProject: "{{ projectName }}",
+        enlace: document.getElementById('videoBox').value
+      };
+        try {
+          const response = await fetch(`http://127.0.0.1:5000/api/upload/video`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(videoData)
+            });
+            
+        } catch (error) {
+            console.error('Error al extraer las imágenes:', error);
+        }
+    });
+
+    // Extraer imágenes
+    fetchImagesButton.addEventListener('click', async () => {
+        try {
+            const response = await fetch(`http://127.0.0.1:5000/api/images/${sesion}/${projectName}`);
+            const images = await response.json();
+
+            // Limpiar el contenedor de imágenes
+            imagesContainer.innerHTML = '';
+
+            // Mostrar cada imagen
+            images.forEach((image) => {
+                const img = document.createElement('img');
+                img.src = `data:image/jpeg;base64,${image}`;
+                img.width = 200;  // Puedes ajustar el tamaño de la imagen aquí
+                imagesContainer.appendChild(img);
+            });
+        } catch (error) {
+            console.error('Error al extraer las imágenes:', error);
+        }
+    });
+</script>
+</body>
+</html>

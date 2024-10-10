@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir y Extraer Imagenes</title>
+</head>
+<body>
+    <h1>Subir Imagen</h1>
+    <form id="imageForm">
+        <input type="file" id="imageInput" name="image" accept="image/*" required />
+        <button type="submit">Subir Imagen</button>
+    </form>
+
+    <h2>Imágenes Guardadas</h2>
+    <button id="fetchImages">Extraer Imágenes</button>
+    <div id="imagesContainer"></div>
+
+    <script>
+        const form = document.getElementById('imageForm');
+        const fetchImagesButton = document.getElementById('fetchImages');
+        const imagesContainer = document.getElementById('imagesContainer');
+        const projectName="";
+        const sesion = "{{username}}";
+        // Subir imagen
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const imageInput = document.getElementById('imageInput');
+            const formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/api/upload/${sesion}/${projectName}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                alert(data.message);
+            } catch (error) {
+                console.error('Error al subir la imagen:', error);
+            }
+        });
+
+        // Extraer imágenes
+        fetchImagesButton.addEventListener('click', async () => {
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/api/images/${sesion}/${projectName}`);
+                const images = await response.json();
+
+                // Limpiar el contenedor de imágenes
+                imagesContainer.innerHTML = '';
+
+                // Mostrar cada imagen
+                images.forEach((image) => {
+                    const img = document.createElement('img');
+                    img.src = `data:image/jpeg;base64,${image}`;
+                    img.width = 200;  // Puedes ajustar el tamaño de la imagen aquí
+                    imagesContainer.appendChild(img);
+                });
+            } catch (error) {
+                console.error('Error al extraer las imágenes:', error);
+            }
+        });
+    </script>
+</body>
+</html>

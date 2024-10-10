@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrowdTEC</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <style>
+    .navbar-custom {
+      background-color: #343a40; 
+      border-bottom: 1px solid #6c757d; 
+    }
+    .navbar-brand {
+      font-weight: bold;
+      color: #ffffff; 
+    }
+    .navbar .nav-link {
+      color: #ffffff; 
+    }
+    .navbar .nav-link:hover {
+      color: #adb5bd; 
+    }
+    .sidebar {
+      width: 250px;
+      background-color: #f8f9fa; 
+      padding: 20px;
+      border-right: 1px solid #dee2e6; 
+    }
+    .sidebar .btn {
+      width: 100%;
+      text-align: left;
+      margin-bottom: 10px;
+      color: #007bff; 
+      border-color: #007bff; 
+    }
+    .sidebar .btn:hover {
+      background-color: #007bff; 
+      color: white; 
+    }
+    .content {
+      padding: 20px;
+      background-color: #ffffff; 
+      flex: 1;
+    }
+    .menu-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #343a40; 
+    }
+    .footer {
+      background-color: #343a40;
+      height: 50px;
+      color: #ffffff; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      border-radius: 15px; 
+    }
+    .card img {
+      border-radius: 15px; 
+    }
+  </style>
+</head>
+<body class="d-flex flex-column" style="min-height: 100vh;">
+
+  
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light navbar-custom">
+    <a class="navbar-brand" href="#">CrowdTEC</a>
+    <div class="ml-auto d-flex">
+      <a href="#" class="nav-link">Contact</a>
+      <a href="#" onclick="window.location.href = `http://localhost:5000/logout`" class="nav-link">Log Out</a>
+    </div>
+  </nav>
+
+  <div class="d-flex flex-grow-1">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="menu-title">Menu</div>
+      <a href="http://localhost:5000/project?username={{ username }}" class="btn btn-outline-primary">Create Project</a>
+      <a href="http://localhost:5000/myProject?username={{ username }}" class="btn btn-outline-primary">My Projects</a>
+      <a href="http://localhost:5000/availableProjects?username={{ username }}" class="btn btn-outline-primary">Available Projects</a>
+      <a href="http://localhost:5000/updateProfile?username={{ username }}"class="btn btn-outline-primary">Edit Profile</a>
+      <a href="http://localhost:5000/donationHistory?username={{ username }}"class="btn btn-outline-primary">Donation History</a>
+     
+    
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+      <div class="d-flex align-items-center justify-content-between">
+        <h3>Best Project</h3>
+        <div>
+          <button class="btn btn-outline-dark"><i class="fas fa-plus"></i></button>
+          <button class="btn btn-outline-dark"><i class="fas fa-bars"></i></button>
+        </div>
+      </div>
+      <div class="card mt-3">
+        <div class="card-body text-center">
+          <img src="https://via.placeholder.com/150" alt="Best Project" class="img-fluid">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    &copy; 2024 CrowdTEC
+  </div>
+
+  <!-- Bootstrap JS and dependencies -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+
+</body>
+</html>

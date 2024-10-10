@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(to bottom right, #07137a, #2d5b86, #81b8e6);
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+        }
+        .navbar {
+            background: linear-gradient(to bottom right, #94b6eb, #6ba0d1, #81b8e6);
+            padding: 1rem;
+            border-bottom: 2px solid white;
+        }
+        
+
+        .navbar-brand {
+            font-weight: bold;
+            color: white;
+            font-size: 24px;
+        }
+
+        .navbar-nav a {
+            color: white;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
+        .navbar-nav a:hover {
+            color: #F0F0F0;
+        }
+
+        .user-icon {
+            margin-left: 1rem;
+            color: white;
+            font-size: 24px;
+            vertical-align: middle;
+        }
+        .btn-back {
+            margin-bottom: 1.5rem;
+            font-weight: bold;
+            color: rgb(0, 0, 0);
+            border: 2px solid rgb(0, 0, 0);
+            border-radius: 5px;
+        }
+        .header-bar {
+            background-color: white;
+            color: black;
+            padding: 10px 20px;
+            border-bottom: 2px solid #dcdcdc;
+        }
+        .header-bar a {
+            color: black;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .project-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            color: black;
+            margin-bottom: 15px;
+        }
+        h5 {
+            color: #777777;
+        }
+        .project-title {
+            color: #1b1464;
+            font-weight: bold;
+        }
+        .action-buttons a {
+            color: #1b1464;
+            margin-right: 10px;
+        }
+        .action-buttons a:hover {
+            text-decoration: underline;
+        }
+        strong {
+            color: #000000; /* Negro para los nombres de los proyectos */
+            font-weight: bold; /* Opción adicional para hacerlos más visibles */
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">CrowdTEC</a>
+            <div class="collapse navbar-collapse justify-content-end">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Sign out</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="user-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                                <path d="M12 2c-2.209 0-4 1.791-4 4s1.791 4 4 4 4-1.791 4-4-1.791-4-4-4zm0 6c-1.103 0-2-.897-2-2s.897-2 2-2 2 .897 2 2-.897 2-2 2zm0 4c-4.418 0-8 3.582-8 8h2c0-3.313 2.687-6 6-6s6 2.687 6 6h2c0-4.418-3.582-8-8-8z" />
+                            </svg>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <a href="#" class="btn btn-back" onclick="history.back()">&#8592; </a>
+        <h3 class="text-center"><strong>Management</strong></h3>
+        <div class="project-container">
+            <h5 class="project-title">Project 1</h5>
+            <p>Status: Ongoing</p>
+            <div class="action-buttons">
+                <a href="#">View Details</a>
+                <a href="#">Edit</a>
+                <a href="#">Delete</a>
+            </div>
+        </div>
+
+        <div class="project-container">
+            <h5 class="project-title">Project 2</h5>
+            <p>Status: Completed</p>
+            <div class="action-buttons">
+                <a href="#">View Details</a>
+                <a href="#">Edit</a>
+                <a href="#">Delete</a>
+            </div>
+        </div>
+
+        <div class="project-container">
+            <h5 class="project-title">Project 3</h5>
+            <p>Status: Ongoing</p>
+            <div class="action-buttons">
+                <a href="#">View Details</a>
+                <a href="#">Edit</a>
+                <a href="#">Delete</a>
+            </div>
+        </div>
+
+        <div class="project-container">
+            <h5 class="project-title">Project 4</h5>
+            <p>Status: Pending</p>
+            <div class="action-buttons">
+                <a href="#">View Details</a>
+                <a href="#">Edit</a>
+                <a href="#">Delete</a>
+            </div>
+        </div>
+
+        <div class="project-container">
+            <h5 class="project-title">Project 5</h5>
+            <p>Status: Completed</p>
+            <div class="action-buttons">
+                <a href="#">View Details</a>
+                <a href="#">Edit</a>
+                <a href="#">Delete</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
